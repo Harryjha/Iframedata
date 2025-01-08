@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const ChatMenu = () => {
 
@@ -22,6 +22,16 @@ options: ["Student", "News", "Event"],
 const [selectedOption, setSelectedOption] = useState(null);
 const [disabledOptions, setDisabledOptions] = useState([]);
 const [inputEnabled, setInputEnabled] = useState(false);
+
+const messagesEndRef = useRef(null);
+
+const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+};
+
+useEffect(() => {
+    scrollToBottom();
+}, [chatHistory]);
 
 const handleUserInput = (field, value) => {
 setUserInfo((prev) => ({
@@ -393,112 +403,99 @@ setIsUserVerified(false);
 };
 
 return (
-<div className="flex flex-col min-h-screen relative">
-<div className="flex justify-center items-start pt-8 flex-1 bg-indigo-50">
-<div className="w-[90%] max-w-[540px] h-[560px] bg-white rounded-3xl p-6 shadow-lg relative">
-<div className="flex flex-col space-y-6 h-full overflow-y-auto pr-2 pb-16">
-{chatHistory.map((chat, index) => (
-<div key={index} className="flex flex-col space-y-3">
-{chat.type === "bot" && (
-<>
-<div className="bg-emerald-600 text-white px-6 py-3 rounded-full w-fit">
-{chat.title}
-</div>
-{chat.options ? (
-<div
-className={`grid ${
-chat.options.length === 8
-? "grid-cols-2 gap-3"
-: "flex flex-col space-y-2"
-}`}
->
-{chat.options.map((option, optIndex) => (
-<button
-key={optIndex}
-onClick={() => handleOptionClick(option)}
-disabled={
-// Disable if any option in the same group has been selected
-selectedOption &&
-(
-// For program options (B.Tech, M.Tech, Others)
-(["B.Tech", "M.Tech", "Others"].includes(option) &&
-["B.Tech", "M.Tech", "Others"].includes(selectedOption)) ||
-// For main menu options (Student, News, Event)
-(["Student", "News", "Event"].includes(option) &&
-["Student", "News", "Event"].includes(selectedOption)) ||
-// For result options (Results, Fee Details, Student Details)
-(["Results", "Fee Details", "Student Details"].includes(option) &&
-["Results", "Fee Details", "Student Details"].includes(selectedOption))
-) &&
-option !== selectedOption
-}
-className={`px-4 py-2 rounded-full text-sm ${
-chat.options.length === 8 ? "w-full" : "w-fit"
-} ${
-selectedOption &&
-(
-(["B.Tech", "M.Tech", "Others"].includes(option) &&
-["B.Tech", "M.Tech", "Others"].includes(selectedOption)) ||
-(["Student", "News", "Event"].includes(option) &&
-["Student", "News", "Event"].includes(selectedOption)) ||
-(["Results", "Fee Details", "Student Details"].includes(option) &&
-["Results", "Fee Details", "Student Details"].includes(selectedOption))
-) &&
-option !== selectedOption
-? "bg-gray-400 cursor-not-allowed"
-: "bg-indigo-600 hover:bg-indigo-700"
-} text-white`}
->
-{option}
-</button>
-))}
-</div>
-) : (
-<pre className="whitespace-pre-wrap bg-gray-100 p-4 rounded font-mono text-sm">
-{chat.text}
-</pre>
-)}
-</>
-)}
-{chat.type === "user" && (
-<div className="flex justify-end">
-<div className="bg-violet-600 text-white px-6 py-3 rounded-full w-fit">
-{chat.text}
-</div>
-</div>
-)}
-</div>
-))}
-</div>
+    <div className="h-full flex flex-col overflow-hidden">
+        <div className="flex-1 bg-indigo-50">
+            <div className="w-full h-full bg-white relative flex flex-col">
+                {/* Chat history container with auto-scroll */}
+                <div 
+                    className="flex-1 overflow-y-auto p-4 space-y-4"
+                    style={{ maxHeight: 'calc(100vh - 180px)' }}
+                    ref={(el) => {
+                        // Auto-scroll to bottom when new messages are added
+                        if (el) {
+                            el.scrollTop = el.scrollHeight;
+                        }
+                    }}
+                >
+                    {chatHistory.map((chat, index) => (
+                        <div key={index} className="flex flex-col space-y-3">
+                            {chat.type === "bot" && (
+                                <>
+                                    <div className="bg-emerald-600 text-white px-6 py-3 rounded-full w-fit">
+                                        {chat.title}
+                                    </div>
+                                    {chat.options ? (
+                                        <div className={`grid ${
+                                            chat.options.length === 8
+                                                ? "grid-cols-2 gap-3"
+                                                : "flex flex-col space-y-2"
+                                        }`}>
+                                            {chat.options.map((option, optIndex) => (
+                                                <button
+                                                    key={optIndex}
+                                                    onClick={() => handleOptionClick(option)}
+                                                    disabled={disabledOptions.includes(option)}
+                                                    className={`px-4 py-2 rounded-full text-sm ${
+                                                        chat.options.length === 8 ? "w-full" : "w-fit"
+                                                    } ${
+                                                        disabledOptions.includes(option)
+                                                            ? "bg-gray-400 cursor-not-allowed"
+                                                            : "bg-indigo-600 hover:bg-indigo-700"
+                                                    } text-white`}
+                                                >
+                                                    {option}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <pre className="whitespace-pre-wrap bg-gray-100 p-4 rounded font-mono text-sm">
+                                            {chat.text}
+                                        </pre>
+                                    )}
+                                </>
+                            )}
+                            {chat.type === "user" && (
+                                <div className="flex justify-end">
+                                    <div className="bg-violet-600 text-white px-6 py-3 rounded-full w-fit">
+                                        {chat.text}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
 
-<div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-<div className="flex space-x-3">
-<input
-type="text"
-placeholder="Enter Here"
-value={userInfo.rollNumber}
-onChange={(e) => handleUserInput('rollNumber', e.target.value)}
-disabled={!inputEnabled}
-className={`border p-2 rounded-lg flex-grow ${
-!inputEnabled ? 'bg-gray-100' : 'bg-white'
-}`}
-/>
-<button
-onClick={handleSubmitUserInfo}
-disabled={!inputEnabled}
-className={`px-6 py-2 rounded-full ${
-!inputEnabled
-? 'bg-gray-400 cursor-not-allowed'
-: 'bg-indigo-600 hover:bg-indigo-700'
-} text-white`}
->
-Submit
-</button>
-</div>
-</div>
-</div>
-</div>
-</div>
+                <div ref={messagesEndRef} />
+
+                {/* Input container */}
+                <div className="p-4 bg-white border-t">
+                    <div className="flex space-x-3">
+                        <input
+                            type="text"
+                            placeholder="Enter Here"
+                            value={userInfo.rollNumber}
+                            onChange={(e) => handleUserInput('rollNumber', e.target.value)}
+                            disabled={!inputEnabled}
+                            className={`border p-2 rounded-lg flex-grow ${
+                                !inputEnabled ? 'bg-gray-100' : 'bg-white'
+                            }`}
+                        />
+                        <button
+                            onClick={handleSubmitUserInfo}
+                            disabled={!inputEnabled}
+                            className={`px-6 py-2 rounded-full ${
+                                !inputEnabled
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                            } text-white`}
+                        >
+                            Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 );
 };
 

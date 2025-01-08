@@ -1,13 +1,15 @@
-import React from "react";
-import Homepage from "./pages/Homepage";
-import ChatMenu from "./pages/ChatMenu";
-const App = () => {
-  return (
-    <>
-      <Homepage />
-      <ChatMenu />
-    </>
-  );
-};
+import React from 'react';
+import ChatbotWidget from './components/ChatbotWidget';
 
-export default App;
+function App() { 
+    // Check if running in iframe
+    const isIframe = window !== window.top;
+
+    return (
+        <div className="min-h-screen">
+            {!isIframe && <ChatbotWidget />}
+        </div>
+    );
+}
+
+export default App; 
